@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+  <meta http-equiv="Pragma" content="no-cache">
+  <meta http-equiv="Expires" content="0">
+  <title>4D HyperSpace Visualizer - Interactive 4D to 3D Space</title>
+  <link rel="stylesheet" href="css/styles.css?v=3.3">
+  <script src="lib/three.min.js?v=3.3"></script>
+  <script src="lib/OrbitControls.js?v=3.3"></script>
+  <script src="lib/MarchingCubes.js?v=3.3"></script>
+  <script src="lib/math.min.js?v=3.3"></script>
+</head>
+<body>
+
+  <div class="app-viewport">
+
+    <!-- Header Navigation (Compact 50px, Zero Page Scroll) -->
+    <header class="app-header">
+      <div class="brand-section">
+        <div class="brand-logo">4D</div>
+        <div class="brand-titles">
+          <div class="brand-name">4D HyperSpace</div>
+          <div class="brand-tagline">4D &rarr; 3D Projections & Slicing</div>
+        </div>
+      </div>
+
+      <!-- Progression Tabs -->
+      <nav class="progression-nav" id="dimensionTabs">
+        <button class="nav-tab-btn active" data-mode="point">
+          <span class="nav-badge">0D</span> Point
+        </button>
+        <button class="nav-tab-btn" data-mode="line">
+          <span class="nav-badge">1D</span> Line
+        </button>
+        <button class="nav-tab-btn" data-mode="plane">
+          <span class="nav-badge">2D</span> Plane
+        </button>
+        <button class="nav-tab-btn" data-mode="volume">
+          <span class="nav-badge">3D</span> Volume
+        </button>
+        <button class="nav-tab-btn" data-mode="polytope">
+          <span class="nav-badge">4D</span> Polytopes
+        </button>
+        <button class="nav-tab-btn" data-mode="wave">
+          <span class="nav-badge">🌊</span> 4D Wave
+        </button>
+        <button class="nav-tab-btn" data-mode="equation">
+          <span class="nav-badge">F(4D)</span> Equation
+        </button>
+      </nav>
+
+      <!-- Right Header Actions & Axis Legend -->
+      <div class="header-actions">
+        <div class="axis-pills">
+          <div class="axis-pill-item" style="color: var(--axis-w);" title="4th Dimension">
+            <div class="axis-dot" style="background: var(--axis-w); box-shadow: 0 0 6px var(--axis-w);"></div>
+            <span>W</span>
+          </div>
+          <div class="axis-pill-item" style="color: var(--axis-x);" title="Width">
+            <div class="axis-dot" style="background: var(--axis-x); box-shadow: 0 0 6px var(--axis-x);"></div>
+            <span>X</span>
+          </div>
+          <div class="axis-pill-item" style="color: var(--axis-y);" title="Height">
+            <div class="axis-dot" style="background: var(--axis-y); box-shadow: 0 0 6px var(--axis-y);"></div>
+            <span>Y</span>
+          </div>
+          <div class="axis-pill-item" style="color: var(--axis-z);" title="Depth">
+            <div class="axis-dot" style="background: var(--axis-z); box-shadow: 0 0 6px var(--axis-z);"></div>
+            <span>Z</span>
+          </div>
+        </div>
+
+        <button class="action-btn" id="btnToggleSidebar" title="Toggle Controls Sidebar">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"/><line x1="9" y1="3" x2="9" y2="21"/></svg>
+          <span>Controls</span>
+        </button>
+
+        <button class="action-btn" id="btnTheoryModal" title="4D Geometry Guide">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><path d="M9.09 9a3 3 0 0 1 5.83 1c0 2-3 3-3 3"/><line x1="12" y1="17" x2="12.01" y2="17"/></svg>
+          <span>Guide</span>
+        </button>
+
+        <button class="action-btn" id="btnBrowserFullscreen" title="Toggle True Fullscreen">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M8 3H5a2 2 0 0 0-2 2v3m18 0V5a2 2 0 0 0-2-2h-3m0 18h3a2 2 0 0 0 2-2v-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>
+        </button>
+      </div>
+    </header>
+
+    <!-- Main Stage Area -->
+    <main class="main-stage">
+
+      <!-- Collapsible Floating Controls Sidebar -->
+      <aside class="stage-sidebar" id="sidebarControls">
+        <div class="sidebar-tabs">
+          <button class="sidebar-tab-btn active" data-stab="shapes">Parameters</button>
+          <button class="sidebar-tab-btn" data-stab="rotations">4D Rotations</button>
+          <button class="sidebar-tab-btn" data-stab="slicing">Slicing</button>
+          <button class="sidebar-tab-btn" data-stab="insights">Insights</button>
+        </div>
+
+        <div class="sidebar-content-area">
+
+          <!-- TAB 1: Shape Specific Controls -->
+          <div class="sidebar-tab-page" id="page-shapes">
+            <!-- Rendered dynamically by app.js -->
+            <div id="dynamicShapeControls"></div>
+          </div>
+
+          <!-- TAB 2: 4D Rotations in 6 Planes -->
+          <div class="sidebar-tab-page" id="page-rotations" style="display: none;">
+            <div class="panel-block">
+              <div class="panel-title">
+                <span>4D Gyroscopic Planes</span>
+                <button class="action-btn" id="btnResetRotations" style="padding: 2px 6px; font-size: 0.68rem;">Reset</button>
+              </div>
+
+              <div class="rot-grid">
+                <div class="rot-card">
+                  <div class="rot-header">
+                    <span class="rot-plane-tag">X - W</span>
+                    <button class="auto-btn active" data-plane="xw" id="auto-xw">Auto</button>
+                  </div>
+                  <input type="range" id="rot-xw" min="0" max="6.283" step="0.02" value="0">
+                </div>
+
+                <div class="rot-card">
+                  <div class="rot-header">
+                    <span class="rot-plane-tag">Z - W</span>
+                    <button class="auto-btn active" data-plane="zw" id="auto-zw">Auto</button>
+                  </div>
+                  <input type="range" id="rot-zw" min="0" max="6.283" step="0.02" value="0">
+                </div>
+
+                <div class="rot-card">
+                  <div class="rot-header">
+                    <span class="rot-plane-tag">Y - W</span>
+                    <button class="auto-btn" data-plane="yw" id="auto-yw">Auto</button>
+                  </div>
+                  <input type="range" id="rot-yw" min="0" max="6.283" step="0.02" value="0">
+                </div>
+
+                <div class="rot-card">
+                  <div class="rot-header">
+                    <span class="rot-plane-tag">X - Y</span>
+                    <button class="auto-btn" data-plane="xy" id="auto-xy">Auto</button>
+                  </div>
+                  <input type="range" id="rot-xy" min="0" max="6.283" step="0.02" value="0">
+                </div>
+
+                <div class="rot-card">
+                  <div class="rot-header">
+                    <span class="rot-plane-tag">X - Z</span>
+                    <button class="auto-btn" data-plane="xz" id="auto-xz">Auto</button>
+                  </div>
+                  <input type="range" id="rot-xz" min="0" max="6.283" step="0.02" value="0">
+                </div>
+
+                <div class="rot-card">
+                  <div class="rot-header">
+                    <span class="rot-plane-tag">Y - Z</span>
+                    <button class="auto-btn" data-plane="yz" id="auto-yz">Auto</button>
+                  </div>
+                  <input type="range" id="rot-yz" min="0" max="6.283" step="0.02" value="0">
+                </div>
+              </div>
+
+              <div class="form-row" style="margin-top: 6px;">
+                <div class="row-label">
+                  <span>Speed Multiplier</span>
+                  <span class="num-badge" id="valRotSpeed">1.0x</span>
+                </div>
+                <input type="range" id="sliderRotSpeed" min="0.1" max="3.0" step="0.1" value="1.0">
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 3: 4D Slicing Coordinates -->
+          <div class="sidebar-tab-page" id="page-slicing" style="display: none;">
+            <div class="panel-block">
+              <div class="panel-title">
+                <span>Hyperplane Slices</span>
+                <button class="action-btn" id="btnSweepSlice" style="padding: 2px 6px; font-size: 0.68rem;">&#9654; Auto-Sweep</button>
+              </div>
+
+              <div class="form-row">
+                <div class="row-label">
+                  <span>Slice W (Affects <strong style="color: var(--axis-w)">XYZ</strong>)</span>
+                  <span class="num-badge" id="valSliceW">0.00</span>
+                </div>
+                <input type="range" id="sliderSliceW" min="-2.4" max="2.4" step="0.05" value="0.0">
+              </div>
+
+              <div class="form-row">
+                <div class="row-label">
+                  <span>Slice Z (Affects <strong style="color: var(--axis-z)">WXY</strong>)</span>
+                  <span class="num-badge" id="valSliceZ">0.00</span>
+                </div>
+                <input type="range" id="sliderSliceZ" min="-2.4" max="2.4" step="0.05" value="0.0">
+              </div>
+
+              <div class="form-row">
+                <div class="row-label">
+                  <span>Slice X (Affects <strong style="color: var(--axis-x)">YZW</strong>)</span>
+                  <span class="num-badge" id="valSliceX">0.00</span>
+                </div>
+                <input type="range" id="sliderSliceX" min="-2.4" max="2.4" step="0.05" value="0.0">
+              </div>
+
+              <div class="form-row">
+                <div class="row-label">
+                  <span>Slice Y (Affects <strong style="color: var(--axis-y)">WXZ</strong>)</span>
+                  <span class="num-badge" id="valSliceY">0.00</span>
+                </div>
+                <input type="range" id="sliderSliceY" min="-2.4" max="2.4" step="0.05" value="0.0">
+              </div>
+
+              <div style="margin-top: 10px; display: flex; align-items: center; justify-content: space-between; font-size: 0.75rem; color: var(--text-secondary);">
+                <span>4D Perspective Foreshortening</span>
+                <input type="checkbox" id="chkPerspective4D" style="cursor: pointer;">
+              </div>
+            </div>
+          </div>
+
+          <!-- TAB 4: Mathematical Insights -->
+          <div class="sidebar-tab-page" id="page-insights" style="display: none;">
+            <div class="insight-card">
+              <strong id="eduCardTitle" style="color: #fff; font-size: 0.8rem; display: block; margin-bottom: 6px;">Geometric Insight</strong>
+              <div id="eduCardBody">Select any mode to see mathematical details.</div>
+            </div>
+          </div>
+
+        </div>
+      </aside>
+
+      <!-- The 4 3D Viewports Container (2x2 Grid or Focus Mode with 3 Side Boxes) -->
+      <section class="viewports-wrapper layout-grid" id="viewportsWrapper">
+
+        <!-- Viewport 1: (w, x, y) Subspace -->
+        <article class="viewport-panel" id="panel-wxy" data-subspace="wxy">
+          <div class="viewport-hud-top">
+            <div class="hud-badge">
+              <span class="hud-badge-title">Subspace (w, x, y)</span>
+              <div class="hud-badge-axes">
+                <span style="color: var(--axis-w)">W</span>
+                <span style="color: var(--axis-x)">X</span>
+                <span style="color: var(--axis-y)">Y</span>
+              </div>
+            </div>
+            <div class="hud-ortho-info">Orthogonal: Z &bull; Slice: <span id="hudSliceZ">0.00</span></div>
+          </div>
+
+          <div class="viewport-toolbar">
+            <button class="hud-btn btn-focus-vp" data-subspace="wxy" title="Focus / Fullscreen Viewport (Puts other 3 sideways)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+            </button>
+            <button class="hud-btn btn-reset-cam" data-subspace="wxy" title="Reset View">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            </button>
+          </div>
+
+          <div class="sidecar-promote-pill">&#9650; Click to Focus</div>
+          <div class="viewport-canvas-container" id="vp-wxy"></div>
+        </article>
+
+        <!-- Viewport 2: (x, y, z) Subspace - Standard 3D Space -->
+        <article class="viewport-panel" id="panel-xyz" data-subspace="xyz">
+          <div class="viewport-hud-top">
+            <div class="hud-badge">
+              <span class="hud-badge-title">Subspace (x, y, z)</span>
+              <div class="hud-badge-axes">
+                <span style="color: var(--axis-x)">X</span>
+                <span style="color: var(--axis-y)">Y</span>
+                <span style="color: var(--axis-z)">Z</span>
+              </div>
+            </div>
+            <div class="hud-ortho-info">Orthogonal: W &bull; Slice: <span id="hudSliceW">0.00</span></div>
+          </div>
+
+          <div class="viewport-toolbar">
+            <button class="hud-btn btn-focus-vp" data-subspace="xyz" title="Focus / Fullscreen Viewport (Puts other 3 sideways)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+            </button>
+            <button class="hud-btn btn-reset-cam" data-subspace="xyz" title="Reset View">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            </button>
+          </div>
+
+          <div class="sidecar-promote-pill">&#9650; Click to Focus</div>
+          <div class="viewport-canvas-container" id="vp-xyz"></div>
+        </article>
+
+        <!-- Viewport 3: (y, z, w) Subspace -->
+        <article class="viewport-panel" id="panel-yzw" data-subspace="yzw">
+          <div class="viewport-hud-top">
+            <div class="hud-badge">
+              <span class="hud-badge-title">Subspace (y, z, w)</span>
+              <div class="hud-badge-axes">
+                <span style="color: var(--axis-y)">Y</span>
+                <span style="color: var(--axis-z)">Z</span>
+                <span style="color: var(--axis-w)">W</span>
+              </div>
+            </div>
+            <div class="hud-ortho-info">Orthogonal: X &bull; Slice: <span id="hudSliceX">0.00</span></div>
+          </div>
+
+          <div class="viewport-toolbar">
+            <button class="hud-btn btn-focus-vp" data-subspace="yzw" title="Focus / Fullscreen Viewport (Puts other 3 sideways)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+            </button>
+            <button class="hud-btn btn-reset-cam" data-subspace="yzw" title="Reset View">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            </button>
+          </div>
+
+          <div class="sidecar-promote-pill">&#9650; Click to Focus</div>
+          <div class="viewport-canvas-container" id="vp-yzw"></div>
+        </article>
+
+        <!-- Viewport 4: (w, x, z) Subspace -->
+        <article class="viewport-panel" id="panel-wxz" data-subspace="wxz">
+          <div class="viewport-hud-top">
+            <div class="hud-badge">
+              <span class="hud-badge-title">Subspace (w, x, z)</span>
+              <div class="hud-badge-axes">
+                <span style="color: var(--axis-w)">W</span>
+                <span style="color: var(--axis-x)">X</span>
+                <span style="color: var(--axis-z)">Z</span>
+              </div>
+            </div>
+            <div class="hud-ortho-info">Orthogonal: Y &bull; Slice: <span id="hudSliceY">0.00</span></div>
+          </div>
+
+          <div class="viewport-toolbar">
+            <button class="hud-btn btn-focus-vp" data-subspace="wxz" title="Focus / Fullscreen Viewport (Puts other 3 sideways)">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M15 3h6v6M9 21H3v-6M21 3l-7 7M3 21l7-7"/></svg>
+            </button>
+            <button class="hud-btn btn-reset-cam" data-subspace="wxz" title="Reset View">
+              <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            </button>
+          </div>
+
+          <div class="sidecar-promote-pill">&#9650; Click to Focus</div>
+          <div class="viewport-canvas-container" id="vp-wxz"></div>
+        </article>
+
+      </section>
+
+      <!-- Floating Spatial HUD Quick-Bar (Bottom Center) -->
+      <nav class="floating-quick-bar">
+        <button class="quick-btn active" id="btnToggle4DRot" title="Play/Pause 4D Auto-Rotation (Spacebar)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+          <span id="label4DRot">4D Rotate</span>
+        </button>
+
+        <button class="quick-btn" id="btnQuickSweep" title="Play/Pause Slicing Sweep">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+          <span>Sweep</span>
+        </button>
+
+        <div class="quick-divider"></div>
+
+        <button class="quick-btn" id="btnCycleVisMode" title="Cycle Rendering Mode (Slicing / Projection / Both)">
+          <span id="labelVisMode">Slice</span>
+        </button>
+
+        <button class="quick-btn active" id="btnSyncCameras" title="Synchronize Cameras Across All Viewports (Key: S)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21.5 2v6h-6M21.34 15.57a10 10 0 1 1-.57-8.38l5.67-5.67"/></svg>
+          <span>Sync</span>
+        </button>
+
+        <button class="quick-btn" id="btnResetAllCams" title="Reset All Camera Angles">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M3 12a9 9 0 1 0 9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+          <span>Reset</span>
+        </button>
+
+        <div class="quick-divider"></div>
+
+        <button class="quick-btn" id="btnToggleLayoutMode" title="Toggle 2x2 Grid vs Focus View (Key: F)">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+          <span id="labelLayoutMode">Grid (2x2)</span>
+        </button>
+      </nav>
+
+    </main>
+
+  </div>
+
+  <!-- 4D Theory Modal -->
+  <div class="modal-overlay" id="theoryModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2>How 4D Visualization in 3D Works</h2>
+        <button class="modal-close" id="btnCloseModal">&times;</button>
+      </div>
+      <div class="modal-body">
+        <p>Human beings perceive physical reality in 3 spatial dimensions: $(x, y, z)$. A 4-dimensional object has an additional fourth spatial axis $w$, forming points $(w, x, y, z)$ perpendicular to width, height, and depth.</p>
+        
+        <h3>1. The Four 3D Coordinate Subspaces</h3>
+        <p>Just as a 3D object casts 2D shadows onto $(x,y)$, $(y,z)$, and $(x,z)$, a 4D object projects into four primary 3D coordinate subspaces:</p>
+        <ul>
+          <li><strong>(w, x, y) Subspace:</strong> Orthogonal to $Z$. Slicing at $z = z_0$ isolates this cross-section.</li>
+          <li><strong>(x, y, z) Subspace:</strong> The familiar 3D world! Orthogonal to $W$. Slicing at $w = w_0$ gives the exact 3D cross-section at that 4th-dimensional slice.</li>
+          <li><strong>(y, z, w) Subspace:</strong> Orthogonal to $X$.</li>
+          <li><strong>(w, x, z) Subspace:</strong> Orthogonal to $Y$.</li>
+        </ul>
+
+        <h3>2. Dimensional Reduction via Slicing</h3>
+        <ul>
+          <li>A <strong>0D Point</strong> in 4D intersects a 3D hyperplane in at most <strong>one 0D Point</strong>.</li>
+          <li>A <strong>1D Line</strong> intersects in at most a <strong>0D Point</strong> (yellow glowing bead).</li>
+          <li>A <strong>2D Plane</strong> intersects in a <strong>1D Line segment</strong> (illuminated laser line).</li>
+          <li>A <strong>3D Volume</strong> intersects in a <strong>2D Polygon cross-section</strong>.</li>
+          <li>A <strong>4D Hypervolume</strong> (Tesseract, Hypersphere) intersects in a complete <strong>3D Solid</strong>!</li>
+        </ul>
+
+        <h3>3. 4D Rotations (6 Planes)</h3>
+        <p>In 4D space, rotation occurs around a <strong>plane</strong> (not a line axis!). The 6 orthogonal planes are $XW, ZW, YW, XY, XZ, YZ$. Rotations in planes involving $W$ cause parts of the object to traverse the 4th dimension, causing their 3D shadows to fold, turn inside-out, and re-emerge!</p>
+
+        <h3>4. Focus Mode & Keyboard Shortcuts</h3>
+        <ul>
+          <li><strong>F:</strong> Toggle Focus / Fullscreen Mode (large view + 3 sideways boxes)</li>
+          <li><strong>Esc:</strong> Return to 2x2 Grid View</li>
+          <li><strong>Spacebar:</strong> Toggle 4D Auto-Rotation</li>
+          <li><strong>S:</strong> Toggle Camera Synchronization</li>
+          <li><strong>Click any side box in Focus Mode:</strong> Promotes it to the main viewport!</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+
+  <script src="js/math4d.js?v=3.3"></script>
+  <script src="js/marching_cubes.js?v=3.3"></script>
+  <script src="js/shapes4d.js?v=3.3"></script>
+  <script src="js/viewports.js?v=3.3"></script>
+  <script src="js/app.js?v=3.3"></script>
+</body>
+</html>
